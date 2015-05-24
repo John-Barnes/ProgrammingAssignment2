@@ -50,7 +50,7 @@ makeCacheMatrix <- function(InitialMatrix = matrix()) {
         #Subfunction SMOInverseRetrieve to retrieve the previously cached
         #SMOInverse from the cache
        SMOInverseRetrieve<-function(){
-                SMOInverse<-SMOInverseCache
+                SMOInverse<<-SMOInverseCache
                 message("Retrieving inverse from cache")
                 SMOInverse
         }
@@ -75,22 +75,25 @@ makeCacheMatrix <- function(InitialMatrix = matrix()) {
                 ##if no to either question,
                         ##computes xInverse from the new x using solve
                         ##and caches xInverse in xInverseCache
-
+##imports the list of subfunctions set up by makeCacheMatrix
+## (prevents error of trying to subset a function directly)
+Subfunctions<-makeCacheMatrix()
 
 cacheSolve <- function(SMO, ...) {
         ## Checks to see if SMO has changed and SMOInverseCache is non-empty
         ##and if both conditions met,
         ## executes SMOInverseRetrieve for fast and efficient result
-        if((identical(SMO,SMOCache))&&(!is.na(SMOInverseCache))){
-                message("retrieving inverse from cache")
-                makeCacheMatrix$SMOInverseRetrieve()
+        if(identical(SMO,SMOCache)){
+                message("unchanged matrix from previous")
+                Subfunctions$SMOInverseRetrieve()
         ## But if either condition above failed, computes SMOInverse
         ## and loads SMOInverse into the cache
         } else {
                 ##Computes xInverse using solve
-                SMOInverse<-solve(SMO)
+                SMOInverse<<-solve(SMO)
                 ##and caches xInverse in xInverseCache
-                makeCacheMatrix$SMOInverseStore(SMOInverse)
+                Subfunctions$SMOStore(SMO)
+                Subfunctions$SMOInverseStore(SMOInverse)
         }
         SMOInverse
 }
