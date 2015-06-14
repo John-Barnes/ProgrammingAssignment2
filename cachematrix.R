@@ -1,5 +1,5 @@
 ## This file contains code for 2 functions:
-        ##makeCacheMatrix creates functions to:
+        ##makeCacheMatrix creates the list Subfunctions to:
         ##1. create a special matrix object
         ##2. cache a copy of the special matrix object for comparison
         ##3. retrieve a cache of the inverse of the special matrix object
@@ -8,28 +8,30 @@
         ##cacheSolve uses the functions created by makeCacheMatrix to
                 ## check to see if
                         ##Condition1 matrix has not changed, AND
-                        ##Condition2 matrix stored in the inverse cache
+                        ##Condition2 the inverse cache contains a matrix
                 ##and if both conditions 1 and 2 are true,
                         ## retrieves inverse from cache
                         ## for fast and efficient result
                 ##but if either condition is false,
                         ##calculates inverse from the new matrix
                                 ## using solve
+                                ## (and outputting solve error messages
+                                ## for nonsquare or singular matrices)
                         ## caches the new matrix and new inverse
                         ## reports the inverse
 
 
-makeCacheMatrix <- function(InitialMatrix = matrix()) {
+makeCacheMatrix <- function() {
+        #INITIALIZATIONS OF WORKING OBJECTS
         #initialize special matrix object, SMO
-        SMO<<-InitialMatrix
+        SMO<<-matrix(NA)
         #initialize special matrix object cache, SMOCache
-        SMOCache<<-InitialMatrix
+        SMOCache<<-SMO
         #initialize an empty inverse cache, SMOInverseCache
         SMOInverseCache<<-matrix(NA,nrow(SMO),ncol(SMO))
+        #initialize a working matrix to hold the inverse, SMOInverse
         SMOInverse<<-SMOInverseCache
-        SMO
-        SMOCache
-        SMOInverseCache
+
         #set up four subfunctions to retrieve from and write to the caches for
         #both SMO and SMOInverse
         #Subfunction SMORetrieve to call up the cached SMO into the SMO
@@ -38,15 +40,16 @@ makeCacheMatrix <- function(InitialMatrix = matrix()) {
                 SMO
         }
         #Subfunction SMOStore to move the current SMO into the cache
-        #and to reinitialize the SMOInverseCache since SMO has been changed
-        #warns user when matrix change happens
+        #and to reinitialize the SMOInverseCache to NAs (since SMO has been changed)
+        #Also warns user when matrix change happens
         SMOStore<-function(SMO){
                         SMOCache<<-SMO
                         SMOInverseCache<<-matrix(NA,nrow(SMO),ncol(SMO))
                         message("matrix has changed,
-                                caching new matrix and
-                                reinitializing inverse")
+caching new matrix and
+reinitializing inverse")
         }
+
         #Subfunction SMOInverseRetrieve to retrieve the previously cached
         #SMOInverse from the cache
        SMOInverseRetrieve<-function(){
@@ -54,16 +57,18 @@ makeCacheMatrix <- function(InitialMatrix = matrix()) {
                 message("Retrieving inverse from cache")
                 SMOInverse
         }
+
        #Subfunction SMOInverseStore writes SMOInverse to its cache
         SMOInverseStore<-function(SMOInverse){
                 SMOInverseCache<<-SMOInverse
+                message("new inverse has been cached")
         }
        #Output list of subfunctions makes them available for the cacheSolve
        #function later (and other functions as well)
-        list(SMORetrieve=SMORetrieve,
-             SMOStore=SMOStore,
-             SMOInverseRetrieve=SMOInverseRetrieve,
-             SMOInverseStore=SMOInverseStore)
+       Subfunctions<<-list(SMORetrieve=SMORetrieve,
+                        SMOStore=SMOStore,
+                        SMOInverseRetrieve=SMOInverseRetrieve,
+                        SMOInverseStore=SMOInverseStore)
 }
 
 
@@ -75,23 +80,20 @@ makeCacheMatrix <- function(InitialMatrix = matrix()) {
                 ##if no to either question,
                         ##computes xInverse from the new x using solve
                         ##and caches xInverse in xInverseCache
-##imports the list of subfunctions set up by makeCacheMatrix
-## (prevents error of trying to subset a function directly)
-Subfunctions<-makeCacheMatrix()
 
 cacheSolve <- function(SMO, ...) {
         ## Checks to see if SMO has changed and SMOInverseCache is non-empty
         ##and if both conditions met,
         ## executes SMOInverseRetrieve for fast and efficient result
-        if(identical(SMO,SMOCache)){
+        if(identical(SMO,SMOCache)&&!is.na(SMOInverseCache)){
                 message("unchanged matrix from previous")
                 Subfunctions$SMOInverseRetrieve()
         ## But if either condition above failed, computes SMOInverse
         ## and loads SMOInverse into the cache
         } else {
-                ##Computes xInverse using solve
+                ##Computes SMOInverse using solve
                 SMOInverse<<-solve(SMO)
-                ##and caches xInverse in xInverseCache
+                ##and caches SMOInverse in SMOInverseCache
                 Subfunctions$SMOStore(SMO)
                 Subfunctions$SMOInverseStore(SMOInverse)
         }
